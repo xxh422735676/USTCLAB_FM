@@ -1,6 +1,7 @@
 Theorem ch2:forall P Q:Prop,
   (P->Q)->(~Q->~P).
 Proof.
+unfold not.
 intros.
 unfold not in H0.
 unfold not.
