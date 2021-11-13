@@ -83,18 +83,19 @@ solve(F)
 # TODO: Exercise 1-1
 # Try to find solution that satisfies proposition: (P /\ Q) \/ R
 # raise Todo("Exercise 1-1: try to find solution that satisfies proposition: (P /\\ Q) \\/ R")
-print('1-1')
+print('1-1 Started')
 R = Bool('R')
 F = Or(And(P,Q),R)
 solve(F)
+print('1-1 Finised')
 
 # TODO: Exercise 1-2
 # Try to find solution that satisfies proposition: P \/ (Q \/ R)
 # raise Todo("Exercise 1-2: try to find solution that satisfies proposition: P \\/ (Q \\/ R")
-print('1-2')
+print('1-2 Started')
 F = Or(P,Or(Q,R))
 solve(F)
-
+print('1-2 Finished')
 ###########################################################
 # In Exercise 1-1 you've see the basic usage of z3 for describing propositions.
 # Like And, Or, Not. Also how to use the solve method to get the solution.
@@ -115,18 +116,20 @@ solve(F)
 # Consider proposition (P \/ Q) /\ (Q /\ R) /\ (P /\ ~R). Complete below code,
 # Z3 will show you that no solution can satisfy it.
 # raise Todo("Exercise 1-3: try to solve proposition: (P \\/ Q) /\\ (Q /\\ R) /\\ (P /\\ ~R)")
-print('1-3')
+print('1-3 Started')
 F = And(Or(P,Q),And(Q,R)),And(P,Not(R))
 solve(F)
+print('1-3 Finished')
 
 # TODO: Exercise 1-4
 # Try to solve proposition
 # (P /\ ~S /\ R) /\ (R /\ ( ~P \/ (S /\ ~Q)))
 # raise Todo("Exercise 1-4: try to solve proposition: (P /\\ ~S /\\ R) /\\ (R /\\ ( ~P \\/ (S /\\ ~Q)))")
-print('1-4')
+print('1-4 Started')
 S = Bool('S')
 F = And(And(P,Not(S),R),And(R,Or(Not(P),And(S,Not(Q)))))
 solve(F)
+print('1-4 Finished')
 
 ###########################################################
 # You may notice that some problems in Exercise 1 has more than one solutions
@@ -190,16 +193,20 @@ solve(F)
 # from z3. Try to get **all solutions** that satisfy the proposition in
 # Exercise 1-1: (P /\ Q) \/ R
 # raise Todo("Exercise 1-5: try to get all solutions of proposition: (P /\\ Q) \\/ R")
-print('1-5')
+print('1-5 Started')
 F = Or(And(P,Q),R)
 solve(F)
+F = And(F,Not(And(Not(R),Q,P)))
 solve(F)
+F = And(F,Not(And(R,Q,P)))
 solve(F)
+F = And(F,Not(And(R,Not(Q),Not(P))))
 solve(F)
+F = And(F,Not(And(R,Not(Q),(P))))
 solve(F)
+F = And(F,Not(And(R,(Q),Not(P))))
 solve(F)
-solve(F)
-solve(F)
+print('1-5 Finished')
 # We can automate the above process, for this, we should expose
 # more internal capability of Z3. Consider our first example again:
 # P /\ Q
@@ -251,7 +258,9 @@ def sat_all(props, f):
     solver = Solver()
     solver.add(f)
     result = []
+    cnt =0
     while solver.check() == sat:
+        # cnt = cnt+1
         m = solver.model()
         result.append(m)
         block = []
@@ -264,8 +273,16 @@ def sat_all(props, f):
                 new_prop = Not(prop)
 
             block.append(new_prop)
+        new_f = "And(f,Not(And("
+        for b in block:
+            new_f = new_f + str(b) + ","
+        new_f  = new_f[:-1] + ")))"
+        # print(new_f)
+        # raise("stop\n")
+        solver.add(And(f,eval(new_f)))
 
-        raise Todo("Exercise 1-6: try to complete the lost part in the function of `set_all`")
+        
+        # raise Todo("Exercise 1-6: try to complete the lost part in the function of `set_all`")
 
     print("the given proposition: ", f)
     print("the number of solutions: ", len(result))
@@ -278,8 +295,10 @@ def sat_all(props, f):
 
 
 # If you complete the function. Try to use it for below props.
+print('1-6 Started')
 sat_all([P, Q], Or(P, Q))
 sat_all([P], Implies(P, P))
 R = Bool('R')
 sat_all([P, Q, R], Or(P, Q, R))
+print('1-6 Finished')
 # Well done, you've complete exercise 1. Remember to save it for later hands in.
