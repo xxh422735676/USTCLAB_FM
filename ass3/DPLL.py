@@ -40,8 +40,8 @@ P ::= p
 
 
 class Prop:
-    def __repr__(self,func):
-        return self.__str__(func)
+    def __repr__(self):
+        return self.__str__()
 
 
 class PropVar(Prop):
@@ -85,8 +85,8 @@ class PropAnd(Prop):
         self.left = left
         self.right = right
 
-    def __str__(self,func):
-        return f"({func(self.left)} /\\ {func(self.right)})"
+    def __str__(self):
+        return f"({self.left} /\\ {self.right})"
 
 
 class PropOr(Prop):
@@ -94,8 +94,8 @@ class PropOr(Prop):
         self.left = left
         self.right = right
 
-    def __str__(self,func):
-        return f"({func(self.left)} \\/ {func(self.right)})"
+    def __str__(self):
+        return f"({self.left} \\/ {self.right})"
 
 
 class PropImplies(Prop):
@@ -103,16 +103,16 @@ class PropImplies(Prop):
         self.left = left
         self.right = right
 
-    def __str__(self,func):
-        return f"({func(self.left)} -> {func(self.right)})"
+    def __str__(self):
+        return f"({self.left} -> {self.right})"
 
 
 class PropNot(Prop):
     def __init__(self, p):
         self.p = p
 
-    def __str__(self,func):
-        return f"~{func(self.p)}"
+    def __str__(self):
+        return f"~{self.p}"
 
 
 # we can convert the above defined syntax into Z3's representation, so
@@ -141,30 +141,22 @@ def to_z3(prop):
 # in the class.
 def nnf(prop: Prop) -> Prop:
     if is_atom(prop):
-        return prop.__str__()
+        return prop
     else:
         if isinstance(prop, PropImplies):
-            return PropOr(PropNot(prop.left),prop.right).__str__(nnf)
+            return PropOr(PropNot(prop.left),nnf(prop.right))
         if isinstance(prop,PropNot):
             if isinstance(prop.p,PropAnd):
                 return PropOr(PropNot(prop.p.left),PropNot(prop.p.right))
             if isinstance(prop.p,PropOr):
                 return PropAnd(PropNot(prop.p.left),PropNot(prop.p.right))
-            return prop.__str__(nnf)
-        if isinstance(prop,PropOr):
-            return prop.__str__(nnf)
-        if isinstance(prop,PropAnd):
-            return prop.__str__(nnf)
-        # if isinstance(prop,PropAnd):
-        #     return And(to_z3(prop.left),to_z3(prop.right))
+            if isinstance(prop.p, PropNot):
+                return prop.p.p
+            return prop
         # if isinstance(prop,PropOr):
-        #     return Or(to_z3(prop.left),to_z3(prop.right))
-        # if isinstance(prop,PropNot):
-        #     return Not(to_z3(prop.p))
-        # if isinstance(prop,PropTrue):
-        #     return prop.var
-        # if isinstance(prop,PropFalse):
-        #     return prop.var
+        #     return prop.p
+        # if isinstance(prop,PropAnd):
+        #     return prop.p
     # raise Todo("Exercise 3-2: try to implement the `nnf` method")
 
 
@@ -177,7 +169,7 @@ def is_atom(nnf_prop: Prop) -> bool:
 def cnf(nnf_prop: Prop) -> Prop:
     def cnf_d(left: Prop, right: Prop) -> Prop:
         pass
-
+    
     raise Todo("Exercise 3-3: try to implement the `cnf`and `cnf_d` method")
 
 
@@ -255,11 +247,12 @@ class TestDpll(unittest.TestCase):
         self.assertEqual(str(to_z3(test_prop_2)), "Not(And(Or(p1, Not(p2)), Or(p3, Not(p4))))")
 
     def test_nnf_1(self):
-        # print(str(nnf(test_prop_1)))
+        print(nnf(test_prop_1))
         self.assertEqual(str(nnf(test_prop_1)), "(~p \\/ (~q \\/ p))")
 
-    # def test_nnf_2(self):
-    #     self.assertEqual(str(nnf(test_prop_2)), "((~p1 /\\ p2) \\/ (~p3 /\\ p4))")
+    def test_nnf_2(self):
+        print(nnf(test_prop_2))
+        self.assertEqual(str(nnf(test_prop_2)), "((~p1 /\\ p2) \\/ (~p3 /\\ p4))")
 
     # def test_cnf_1(self):
     #     self.assertEqual(str(cnf(nnf(test_prop_1))), "(~p \\/ (~q \\/ p))")
