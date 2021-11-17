@@ -9,5 +9,5 @@ P =Bool('P')
 Q = Bool('Q')
 
 
-F = Implies(Not(Not(P)), P)
+F = Implies(Not(Not(P)), True)
 solve(Not(F))
