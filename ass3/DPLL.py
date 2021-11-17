@@ -147,11 +147,11 @@ def nnf(prop: Prop) -> Prop:
             return PropOr(PropNot(prop.left),nnf(prop.right))
         if isinstance(prop,PropNot):
             if isinstance(prop.p,PropAnd):
-                return PropOr(PropNot(prop.p.left),PropNot(prop.p.right))
+                return PropOr(nnf(PropNot(prop.p.left)),nnf(PropNot(prop.p.right)))
             if isinstance(prop.p,PropOr):
-                return PropAnd(PropNot(prop.p.left),PropNot(prop.p.right))
+                return PropAnd(nnf(PropNot(prop.p.left)),nnf(PropNot(prop.p.right)))
             if isinstance(prop.p, PropNot):
-                return prop.p.p
+                return nnf(prop.p.p)
             return prop
         # if isinstance(prop,PropOr):
         #     return prop.p
@@ -169,6 +169,7 @@ def is_atom(nnf_prop: Prop) -> bool:
 def cnf(nnf_prop: Prop) -> Prop:
     def cnf_d(left: Prop, right: Prop) -> Prop:
         pass
+    if isinstance(nnf_prop,)
     
     raise Todo("Exercise 3-3: try to implement the `cnf`and `cnf_d` method")
 
@@ -254,8 +255,8 @@ class TestDpll(unittest.TestCase):
         print(nnf(test_prop_2))
         self.assertEqual(str(nnf(test_prop_2)), "((~p1 /\\ p2) \\/ (~p3 /\\ p4))")
 
-    # def test_cnf_1(self):
-    #     self.assertEqual(str(cnf(nnf(test_prop_1))), "(~p \\/ (~q \\/ p))")
+    def test_cnf_1(self):
+        self.assertEqual(str(cnf(nnf(test_prop_1))), "(~p \\/ (~q \\/ p))")
 
     # def test_cnf_2(self):
     #     self.assertEqual(str(cnf(nnf(test_prop_2))),
