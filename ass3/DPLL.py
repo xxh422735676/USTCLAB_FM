@@ -169,9 +169,15 @@ def is_atom(nnf_prop: Prop) -> bool:
 def cnf(nnf_prop: Prop) -> Prop:
     def cnf_d(left: Prop, right: Prop) -> Prop:
         pass
-    if isinstance(nnf_prop,)
+    if is_atom(nnf_prop):
+        return nnf_prop
+    if isinstance(nnf_prop,PropOr) and isinstance(nnf_prop.left,PropAnd):
+        return PropAnd(cnf(PropOr(nnf_prop.left.left,nnf_prop.right)),cnf(PropOr(nnf_prop.left.right,nnf_prop.right)))
+    if isinstance(nnf_prop,PropOr) and isinstance(nnf_prop.right,PropAnd):
+        return PropAnd(cnf(PropOr(nnf_prop.left,nnf_prop.right.left)),cnf(PropOr(nnf_prop.left,nnf_prop.right.right)))
+    return nnf_prop
     
-    raise Todo("Exercise 3-3: try to implement the `cnf`and `cnf_d` method")
+    # raise Todo("Exercise 3-3: try to implement the `cnf`and `cnf_d` method")
 
 
 def flatten(cnf_prop: Prop) -> List[List[Prop]]:
@@ -198,7 +204,8 @@ def flatten(cnf_prop: Prop) -> List[List[Prop]]:
     def get_atom_from_disjunction(prop: Prop) -> List[Prop]:
         if is_atom(prop):
             return [prop]
-
+        if isinstance(prop,PropNot):
+            return [prop]
         if isinstance(prop, PropOr):
             return get_atom_from_disjunction(prop.left) + get_atom_from_disjunction(prop.right)
 
@@ -258,16 +265,18 @@ class TestDpll(unittest.TestCase):
     def test_cnf_1(self):
         self.assertEqual(str(cnf(nnf(test_prop_1))), "(~p \\/ (~q \\/ p))")
 
-    # def test_cnf_2(self):
-    #     self.assertEqual(str(cnf(nnf(test_prop_2))),
-    #                      "(((~p1 \\/ ~p3) /\\ (~p1 \\/ p4)) /\\ ((p2 \\/ ~p3) /\\ (p2 \\/ p4)))")
+    def test_cnf_2(self):
+        print(str(cnf(nnf(test_prop_2))))
+        self.assertEqual(str(cnf(nnf(test_prop_2))),
+                         "(((~p1 \\/ ~p3) /\\ (~p1 \\/ p4)) /\\ ((p2 \\/ ~p3) /\\ (p2 \\/ p4)))")
 
-    # def test_cnf_flatten_1(self):
-    #     self.assertEqual(str(flatten(cnf(nnf(test_prop_1)))), "[[~p, ~q, p]]")
+    def test_cnf_flatten_1(self):
+        print(str(flatten(cnf(nnf(test_prop_1)))))
+        self.assertEqual(str(flatten(cnf(nnf(test_prop_1)))), "[[~p, ~q, p]]")
 
-    # def test_cnf_flatten_2(self):
-    #     self.assertEqual(str(flatten(cnf(nnf(test_prop_2)))),
-    #                      "[[~p1, ~p3], [~p1, p4], [p2, ~p3], [p2, p4]]")
+    def test_cnf_flatten_2(self):
+        self.assertEqual(str(flatten(cnf(nnf(test_prop_2)))),
+                         "[[~p1, ~p3], [~p1, p4], [p2, ~p3], [p2, p4]]")
 
     # def test_dpll_1(self):
     #     s = Solver()
