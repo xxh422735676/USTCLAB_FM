@@ -153,10 +153,10 @@ def nnf(prop: Prop) -> Prop:
             if isinstance(prop.p, PropNot):
                 return nnf(prop.p.p)
             return prop
-        # if isinstance(prop,PropOr):
-        #     return prop.p
-        # if isinstance(prop,PropAnd):
-        #     return prop.p
+        if isinstance(prop,PropOr):
+            return prop
+        if isinstance(prop,PropAnd):
+            return prop
     # raise Todo("Exercise 3-2: try to implement the `nnf` method")
 
 
@@ -215,10 +215,141 @@ def flatten(cnf_prop: Prop) -> List[List[Prop]]:
         return [get_atom_from_disjunction(cnf_prop)]
     elif is_atom(cnf_prop):
         return [[cnf_prop]]
+    elif isinstance(cnf_prop,PropNot):
+        return [cnf_prop]
 
-
+import functools
+import copy 
+flag = False
+sv = {} 
 def dpll(prop: Prop) -> dict:
+    def conj(a:list,b:list)->list:
+        c = []
+        if a.__len__()==0:
+            return b
+        if(b.__len__()==1):
+            c = [a[0] or b[0],a[1] or b[0]]
+        else: 
+            c = [a[0] or b[0],a[1] or b[1]]
+        return  c
+
+    def getRes(elems:List) -> dict:
+        res = {}
+        ret = True
+        while(elems.__len__()>0):
+            elem = elems[0]
+            del elems[0]
+            t = [False,False]
+            print("当前处理元素： ",elem)
+            for e in elem:
+                #先赋值
+                if isinstance(e,PropVar) and (str(e) in res):
+                    t = conj(t,res[str(e)])
+                    elem.remove(e)
+                if isinstance(e,PropNot) and (str(e.p) in res):
+                    t = conj(t,res[str(e.p)])
+                    elem.remove(e)
+            print("1",res,elem)
+            if t == [True,True]: #任意取值
+                for e in elem:
+                    if isinstance(e,PropVar):
+                        res[str(e)] = [True,False]
+                    if isinstance(e,PropNot):
+                        res[str(e.p)] = [True,False]
+                continue
+            if elem.__len__()==0:
+                continue
+            if elem.__len__()==1:
+                if isinstance(elem[0],PropVar):
+                    res[str(elem[0])] = [True,True]
+                if isinstance(elem[0],PropNot):
+                    # print("e.p = ",str(e),str(e.p))
+                    res[str(elem[0].p)] = [True,True]
+                continue
+            r = []
+            for e in elem:
+                #确定值
+                if isinstance(e,PropVar):
+                    res[str(e)] = r
+                    r = conj(r,res[str(e)])
+                if isinstance(e,PropNot):
+                    res[str(e.p)] = [not r[0],not r[1]]
+                    r = conj(r,res[str(e.p)])
+            print("2",res)
+            print("处理完成")
+            ret = ret and t
+
+        if ret ==True:
+            return res
+        else:
+            return "unsat"
+
+    
+    def currCal():
+        pass
+    def dfs(elems:list,level:int,res:dict):
+        global flag
+        global sv
+        if  flag or level >= elems.__len__():
+            flag = True
+            if sv.__len__()==0:
+                sv = res
+            return 
+        t = False
+        elemList = elems[level]
+        for elem in elemList:#已有的值
+            if isinstance(elem,PropVar) and str(elem) in res:
+                t = t or res[str(elem)]
+                elemList.remove(elem)
+            if isinstance(elem,PropNot) and str(elem.p) in res:
+                t = t or res[str(elem.p)]
+                elemList.remove(elem)
+
+        if t == True:
+            for elem in elemList:#未存在的值
+                if isinstance(elem,PropVar) and str(elem) not in res:
+                    res[str(elem)] = True
+                    dfs(elems,level,res)
+                    res[str(elem)] = False
+                    dfs(elems,level,res)
+                    del res[str(elem)]
+                if isinstance(elem,PropNot) and str(elem.p) not in res:
+                    res[str(elem.p)] = True
+                    dfs(elems,level,res)
+                    res[str(elem.p)] = False
+                    dfs(elems,level,res)
+                    del res[str(elem.p)]
+        else:
+            for elem in elemList:
+                if isinstance(elem,PropVar) and str(elem) not in res:
+                    res[str(elem)] = True
+                if isinstance(elem,PropNot) and str(elem.p) not in res:
+                    res[str(elem.p)] = False
+        dfs(elems,level+1,res)
+
+    def cmp(a,b):
+        return a.__len__()>b.__len__()
+    
     flatten_cnf = flatten(cnf(nnf(prop)))
+    flatten_cnf.sort(key = functools.cmp_to_key(cmp))
+    test_run = copy.deepcopy(flatten_cnf)
+    res = {}
+    global sv
+    global flag
+    sv.clear()
+    flag = False
+    dfs(test_run,0,res)
+    # print(sv)
+    return sv
+    
+
+    
+    
+    
+
+
+        
+
 
     # implement the dpll algorithm we've discussed in the lecture
     # you can deal with flattened cnf which generated by `flatten` method for convenience,
@@ -229,7 +360,10 @@ def dpll(prop: Prop) -> dict:
     # output "unsat" if there is no solution
     #
     # feel free to add new method.
-    raise Todo("Exercise 3-4: try to implement the `dpll` algorithm")
+
+
+
+    # raise Todo("Exercise 3-4: try to implement the `dpll` algorithm")
 
 
 #####################
@@ -244,7 +378,7 @@ test_prop_2 = PropNot(PropAnd(
     PropOr(PropVar("p3"), PropNot(PropVar("p4")))
 ))
 
-
+test_prop_my = PropAnd(PropVar("p1"),PropOr(PropVar("p3"),PropVar("p2")))
 # #####################
 class TestDpll(unittest.TestCase):
 
@@ -275,20 +409,29 @@ class TestDpll(unittest.TestCase):
         self.assertEqual(str(flatten(cnf(nnf(test_prop_1)))), "[[~p, ~q, p]]")
 
     def test_cnf_flatten_2(self):
+        print(type(flatten(cnf(nnf(test_prop_2)))[0][0]))
         self.assertEqual(str(flatten(cnf(nnf(test_prop_2)))),
                          "[[~p1, ~p3], [~p1, p4], [p2, ~p3], [p2, p4]]")
 
-    # def test_dpll_1(self):
-    #     s = Solver()
-    #     res = dpll(test_prop_1)
-    #     s.add(Not(Implies(res["p"], Implies(res["q"], res["p"]))))
-    #     self.assertEqual(str(s.check()), "unsat")
 
-    # def test_dpll_2(self):
-    #     s = Solver()
-    #     res = dpll(test_prop_2)
-    #     s.add(Not(Not(And(Or(res["p1"], Not(res["p2"])), Or(res["p3"], Not(res["p4"]))))))
-    #     self.assertEqual(str(s.check()), "unsat")
+    def test_dpll_my(self):
+        s = Solver()
+        res = dpll(test_prop_my)
+        # s.add(Not(And(res["p1"], res["p2"])))
+        s.add(Not(And(res["p1"],Or(res["p3"],res["p2"]))))
+        self.assertEqual(str(s.check()), "unsat")
+
+    def test_dpll_1(self):
+        s = Solver()
+        res = dpll(test_prop_1)
+        s.add(Not(Implies(res["p"], Implies(res["q"], res["p"]))))
+        self.assertEqual(str(s.check()), "unsat")
+
+    def test_dpll_2(self):
+        s = Solver()
+        res = dpll(test_prop_2)
+        s.add(Not(Not(And(Or(res["p1"], Not(res["p2"])), Or(res["p3"], Not(res["p4"]))))))
+        self.assertEqual(str(s.check()), "unsat")
 
 
 if __name__ == '__main__':
