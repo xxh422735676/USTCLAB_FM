@@ -287,7 +287,6 @@ def dpll(prop: Prop) -> dict:
             return res
         else:
             return "unsat"
-
     
     def currCal(elems:list,res:dict):
         global flag
