@@ -220,6 +220,10 @@ def flatten(cnf_prop: Prop) -> List[List[Prop]]:
 
 import functools
 import copy 
+import threading
+import _thread
+import time
+import sys
 flag = False
 sv = {} 
 def dpll(prop: Prop) -> dict:
@@ -285,8 +289,53 @@ def dpll(prop: Prop) -> dict:
             return "unsat"
 
     
-    def currCal():
-        pass
+    def currCal(elems:list,res:dict):
+        global flag
+        global sv
+        if flag ==True:
+            return 
+        t = False
+        for elem in elems:#已有的值
+            if elem.__len__()==0:
+                elems.remove(elem)
+            for e in elem:
+                if isinstance(e,PropVar) and str(e) in res:
+                    t = t or res[str(e)]
+                    elem.remove(e)
+                if isinstance(e,PropNot) and str(e.p) in res:
+                    t = t or res[str(e.p)]
+                    elem.remove(e)
+            if elem.__len__()==0:
+                elems.remove(elem)
+        
+        if elems.__len__()==0:
+            sv = res
+            flag = True
+        
+        if t == True:
+            for elem in elems:#未存在的值
+                for e in elem:
+                    if isinstance(e,PropVar):
+                        res[str(e)] = True
+                        _thread.start_new_thread(currCal,(copy.deepcopy(elems),copy.deepcopy(res)))
+                        res[str(e)] = False
+                        _thread.start_new_thread(currCal,(copy.deepcopy(elems),copy.deepcopy(res)))
+                    if isinstance(e,PropNot):
+                        res[str(e.p)] = True
+                        _thread.start_new_thread(currCal,(copy.deepcopy(elems),copy.deepcopy(res)))
+                        res[str(e.p)] = False
+                        _thread.start_new_thread(currCal,(copy.deepcopy(elems),copy.deepcopy(res)))
+        else:
+            for elem in elems:#未存在的值
+                for e in elem:
+                    if isinstance(e,PropVar):
+                        res[str(e)] = True
+                        _thread.start_new_thread(currCal,(copy.deepcopy(elems),copy.deepcopy(res)))
+                    if isinstance(e,PropNot):
+                        res[str(e.p)] = False
+                        _thread.start_new_thread(currCal,(copy.deepcopy(elems),copy.deepcopy(res)))
+        
+
     def dfs(elems:list,level:int,res:dict):
         global flag
         global sv
@@ -338,8 +387,9 @@ def dpll(prop: Prop) -> dict:
     global flag
     sv.clear()
     flag = False
-    dfs(test_run,0,res)
-    # print(sv)
+    # dfs(test_run,0,res)
+    currCal(test_run,res)
+    time.sleep(0.1)
     return sv
     
 
