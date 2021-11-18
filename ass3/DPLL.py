@@ -386,8 +386,8 @@ def dpll(prop: Prop) -> dict:
     global flag
     sv.clear()
     flag = False
-    # dfs(test_run,0,res)
-    currCal(test_run,res)
+    # dfs(test_run,0,res) #使用非并发的dfs算法
+    currCal(test_run,res) #使用并发线程的算法
     time.sleep(0.1)
     return sv
     
