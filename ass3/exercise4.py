@@ -34,7 +34,53 @@ class Todo(Exception):
 # First we convert it into proposition
 def circuit_layout():
     a, b, c, d = Bools('a b c d')
-    raise Todo("Exercise 4: try to convert the circuit layout into logical propositions and find solutions")
+
+    F = Or(And(a, b, d), And(And(a, b), Not(c)))
+    props = [a, b, c, d]
+
+    sat_all(props, F)
+    print("-----------------------------------------------------------------------------------")
+    sat_all(props, Not(F))
+
+
+def sat_all(props, f):
+    """Get all solutions of given proposition set props that satisfy f
+
+    Arguments:
+        props {BoolRef} -- Proposition list
+        f {Boolref} -- logical express that consist of props
+    """
+    solver = Solver()
+    solver.add(f)
+    result = []
+    while solver.check() == sat:
+        m = solver.model()
+        result.append(m)
+        block = []
+        for prop in props:
+            prop_is_true = m.eval(prop, model_completion=True)
+
+            if prop_is_true:
+                new_prop = prop
+            else:
+                new_prop = Not(prop)
+
+            block.append(new_prop)
+
+        tmp = block[0]
+        for i in range(1, len(block)):
+            tmp = And(tmp, block[i])
+        f = And(f, Not(tmp))
+        solver.add(f)
+
+    print("the given proposition: ", f)
+    print("the number of solutions: ", len(result))
+
+    def print_model(m):
+        print(sorted([(d, m[d]) for d in m], key=lambda x: str(x[0])))
+
+    for m in result:
+        print_model(m)
 
 
 if __name__ == '__main__':
